@@ -25,7 +25,14 @@ pipeline{
                 '''
             }
         }
-        
+        stage('Scanning Image with Trivy') {
+            steps {
+                sh '''
+                echo 'Scanning Docker image with Trivy...'
+                trivy image --exit-code 1 --severity CRITICAL mani937/cicdpython:${BUILD_NUMBER}
+                '''
+            }
+        }
         stage('Pushing the Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
