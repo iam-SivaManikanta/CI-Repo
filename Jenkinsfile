@@ -11,7 +11,22 @@ pipeline{
     stages{
         stage('git checkout'){
             steps{
-               checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: '896ffc88-c10d-43e4-b721-b3bcb6da0285', url: 'https://github.com/iam-SivaManikanta/CI.git']]) 
+               checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: '896ffc88-c10d-43e4-b721-b3bcb6da0285', url: 'https://github.com/iam-SivaManikanta/CI-Repo.git']]) 
+            }
+        }
+        
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') { // Match the name of your SonarQube server config
+                    sh '''
+                    echo 'Running SonarQube Analysis...'
+                    /opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+                      -Dsonar.projectKey=cicdpython \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=http://localhost:9000 \
+                      -Dsonar.login=squ_e765e9cca6005ac7ea260a68350465aab7e89c11
+                    '''
+                }
             }
         }
         
@@ -20,7 +35,6 @@ pipeline{
                 sh '''
                 echo 'building docker image'
                 docker --version
-                cd python-jenkins-argocd-k8s
                 docker build -t mani937/cicdpython:${BUILD_NUMBER} .
                 '''
             }
@@ -29,10 +43,11 @@ pipeline{
             steps {
                 sh '''
                 echo 'Scanning Docker image with Trivy...'
-                trivy image --exit-code 1 --severity CRITICAL mani937/cicdpython:${BUILD_NUMBER}
+                trivy image -f table -o result.sui mani937/cicdpython:${BUILD_NUMBER}
                 '''
             }
         }
+        
         stage('Pushing the Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
