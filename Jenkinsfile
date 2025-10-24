@@ -1,5 +1,5 @@
 pipeline{
-    agent { label 'Linux' }
+    agent { label 'linux' }
     
     environment{
         IMAGE_TAG = "${BUILD_NUMBER}"
